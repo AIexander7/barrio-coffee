@@ -13,6 +13,19 @@ export const createLineItemSchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
   options: z.record(z.string()).default({}),
   quantity: z.coerce.number().int().min(1, 'Quantity must be at least 1'),
+  customText: z.coerce
+    .string()
+    .regex(/^[\x00-\x7F]*$/, {
+      // ASCII characters
+      message: 'Invalid text input. Only letters, numbers, and standard English keyboard symbols are allowed',
+    })
+    .refine((value) => value.trim().length > 0, {
+      message: 'Custom text must not be empty',
+    })
+    .refine((value) => value.trim().length <= 40, {
+      message: 'Custom text must be at most 40 characters',
+    })
+    .optional(),
 });
 
 type CreateLineItemFormData = z.infer<typeof createLineItemSchema>;
@@ -27,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ errors }, { status: 400 });
   }
 
-  const { productId, options, quantity } = validatedFormData;
+  const { productId, options, quantity, customText } = validatedFormData;
 
   const region = await getSelectedRegion(request.headers);
 
@@ -60,6 +73,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { cart } = await addToCart(request, {
     variantId: variant.id!,
     quantity,
+    customText,
   });
 
   await setCartId(responseHeaders, cart.id);

@@ -64,6 +64,11 @@ export default function CheckoutSuccessRoute() {
                       </h3>
                       <p className="text-sm font-normal text-gray-500">{item.variant_title}</p>
                     </div>
+                    {item?.metadata?.custom_text && typeof item?.metadata?.custom_text === 'string' && (
+                      <p className="text-xs font-base text-gray-500">
+                        <span className="italic">Custom Text:</span> {String(item?.metadata?.custom_text)}
+                      </p>
+                    )}
                     <div className="flex flex-1 items-end">
                       <span className="font-normal backdrop:text-gray-500">Qty {item.quantity}</span>
                     </div>

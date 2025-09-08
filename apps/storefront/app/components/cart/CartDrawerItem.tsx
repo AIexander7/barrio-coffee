@@ -37,6 +37,12 @@ export const CartDrawerItem: FC<CartDrawerItemProps> = ({ item, currencyCode, is
             <div>
               <h3 className="text-base font-bold text-gray-900">{item.product_title}</h3>
               <p className="mt-0.5 text-sm text-gray-500">{item.variant_title}</p>
+              {(item.metadata?.custom_text as string) && (
+                <p className="mt-0.5 text-xs text-gray-500">
+                  <strong className="italic">Custom Text: </strong>
+                  {String(item?.metadata?.custom_text)}
+                </p>
+              )}
             </div>
             <Button variant="link" onClick={handleRemoveFromCart} disabled={isRemoving} className="text-sm">
               {isRemoving ? 'Removing' : 'Remove'}

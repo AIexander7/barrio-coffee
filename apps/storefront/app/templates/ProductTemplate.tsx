@@ -2,6 +2,7 @@ import { Breadcrumb, Breadcrumbs } from '@app/components/common/breadcrumbs/Brea
 import { Button } from '@app/components/common/buttons/Button';
 import { Container } from '@app/components/common/container/Container';
 import { FieldLabel } from '@app/components/common/forms/fields/FieldLabel';
+import { Textarea } from '@app/components/common/forms/inputs/Textarea';
 import { Grid } from '@app/components/common/grid/Grid';
 import { GridColumn } from '@app/components/common/grid/GridColumn';
 import { SubmitButton } from '@app/components/common/remix-hook-form/buttons/SubmitButton';
@@ -28,8 +29,9 @@ import {
   selectVariantMatrix,
 } from '@libs/util/products';
 import { StoreProduct, StoreProductOptionValue, StoreProductVariant } from '@medusajs/types';
+import { set } from 'lodash';
 import truncate from 'lodash/truncate';
-import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useFetcher } from 'react-router';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 
@@ -122,6 +124,7 @@ export const ProductTemplate = ({ product, reviewsCount, reviewStats }: ProductT
         ) || {}
       );
     }, [product]),
+    customText: '',
   };
 
   const form = useRemixForm({
@@ -265,6 +268,11 @@ export const ProductTemplate = ({ product, reviewsCount, reviewStats }: ProductT
         // Reset the form to clear validation states
         formRef.current.reset();
 
+        const customText = formRef.current.querySelector('textarea[name="customText"]') as HTMLTextAreaElement;
+        if (customText) {
+          customText.value = '';
+        }
+
         // Re-set the quantity field to 1
         const quantityInput = formRef.current.querySelector('input[name="quantity"]') as HTMLInputElement;
         if (quantityInput) {
@@ -294,23 +302,19 @@ export const ProductTemplate = ({ product, reviewsCount, reviewStats }: ProductT
 
   const soldOut = variantIsSoldOut(selectedVariant) || productSoldOut;
 
-  // Use useCallback for the form submission handler
-  const handleAddToCart = useCallback(() => {
-    // Open cart drawer
-    toggleCartDrawer(true);
-  }, [toggleCartDrawer]);
+  useEffect(() => {
+    if (addToCartFetcher.data?.cart) {
+      toggleCartDrawer(true);
+      form.clearErrors('customText');
+      form.setValue('customText', '');
+    }
+  }, [addToCartFetcher.data?.cart]);
 
   return (
     <>
       <section className="pb-12 pt-12 xl:pt-24 min-h-screen">
         <RemixFormProvider {...form}>
-          <addToCartFetcher.Form
-            id="addToCartForm"
-            ref={formRef}
-            method="post"
-            action="/api/cart/line-items/create"
-            onSubmit={handleAddToCart}
-          >
+          <addToCartFetcher.Form id="addToCartForm" ref={formRef} method="post" action="/api/cart/line-items/create">
             <input type="hidden" name="productId" value={product.id} />
 
             <Container className="px-0 sm:px-6 md:px-8">
@@ -319,7 +323,11 @@ export const ProductTemplate = ({ product, reviewsCount, reviewStats }: ProductT
                   <div className="md:py-6">
                     <Grid className="!gap-0">
                       <GridColumn className="mb-8 md:col-span-6 lg:col-span-7 xl:pr-16 xl:pl-9">
-                        <ProductImageGallery key={product.id} product={product} />
+                        <ProductImageGallery
+                          key={product.id}
+                          product={product}
+                          customText={form.watch('customText') || ''}
+                        />
                       </GridColumn>
 
                       <GridColumn className="flex flex-col md:col-span-6 lg:col-span-5">
@@ -397,6 +405,29 @@ export const ProductTemplate = ({ product, reviewsCount, reviewStats }: ProductT
                                   />
                                 </div>
                               ))}
+                            </section>
+                          )}
+
+                          {product?.metadata?.is_personalized === true && (
+                            <section aria-labelledby="custom-text" className="custom-text">
+                              <h2 id="custom-text" className="sr-only">
+                                What should we write on your mug?
+                              </h2>
+                              <div key="custom-text-input" className="relative">
+                                <FieldLabel className="mb-2">What should we write on your mug?</FieldLabel>
+                                <Textarea
+                                  className={`ring-1 ${form.formState.errors.customText ? 'ring-red-500' : 'ring-gray-200'} col-span-1 rounded-lg border px-3 py-2 pb-6 font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-full`}
+                                  placeholder="Enter your text here"
+                                  {...form.register('customText')}
+                                  {...{ rows: 1 }}
+                                />
+                                <div className="absolute bottom-2 right-3 text-xs text-gray-500">
+                                  {form.watch('customText')?.length}/40
+                                </div>
+                              </div>
+                              {form.formState.errors.customText && (
+                                <p className="mt-1 text-sm text-red-600">{form.formState.errors.customText.message}</p>
+                              )}
                             </section>
                           )}
 
