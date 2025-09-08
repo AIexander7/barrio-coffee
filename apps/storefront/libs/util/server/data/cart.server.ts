@@ -63,33 +63,27 @@ export const addToCart = withAuthHeaders(
     data: {
       variantId: string;
       quantity: number;
+      customText?: string;
     },
   ) => {
-    const { variantId, quantity } = data;
+    const { variantId, quantity, customText } = data;
 
     if (!variantId) {
       throw new Error('Missing variant ID when adding to cart');
     }
 
-    const cartId = await getCartId(request.headers);
+    const cart = await getOrCreateCart(request);
 
-    if (cartId) {
-      return await sdk.store.cart.createLineItem(
-        cartId,
-        {
-          variant_id: variantId,
-          quantity,
-        },
-        {},
-        authHeaders,
-      );
-    }
-
-    const region = await getSelectedRegion(request.headers);
-
-    const cart = await createCart(request, { region_id: region.id, items: [{ variant_id: variantId, quantity }] });
-
-    return cart;
+    return await sdk.store.cart.createLineItem(
+      cart.id,
+      {
+        variant_id: variantId,
+        quantity,
+        ...(customText ? { metadata: { custom_text: customText } } : {}),
+      },
+      {},
+      authHeaders,
+    );
   },
 );
 
