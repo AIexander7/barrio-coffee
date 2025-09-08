@@ -1,7 +1,7 @@
 import { CreateProductWorkflowInputDTO, ProductCollectionDTO, ProductTagDTO } from '@medusajs/framework/types';
 import { ProductStatus } from '@medusajs/utils';
 
-const buildBaseProductData = ({
+const buildBaseProductDataCoffee = ({
   sales_channels,
   sku,
   prices: { usd, cad },
@@ -68,7 +68,90 @@ const buildBaseProductData = ({
   ],
 });
 
+const buildBaseProductDataDrinkware = ({
+  sales_channels,
+  sku,
+  prices: { usd, cad },
+}: {
+  sales_channels: { id: string }[];
+  sku: string;
+  prices: {
+    usd: number;
+    cad: number;
+  };
+}) => ({
+  options: [
+    {
+      title: 'Size',
+      values: ['12oz'],
+    },
+    {
+      title: 'Colors',
+      values: ['White'],
+    },
+  ],
+  sales_channels: sales_channels.map(({ id }) => ({
+    id,
+  })),
+  variants: [
+    {
+      title: 'White Mug 12oz',
+      sku: `${sku}-12OZ`,
+      options: {
+        Size: '12oz',
+        Colors: 'White',
+      },
+      manage_inventory: false,
+      prices: [
+        {
+          amount: cad,
+          currency_code: 'cad',
+        },
+        {
+          amount: usd,
+          currency_code: 'usd',
+        },
+      ],
+    },
+  ],
+  metadata: {
+    is_personalized: true,
+  },
+});
+
 export const seedProducts = ({
+  collections,
+  tags,
+  sales_channels,
+  categories,
+  shipping_profile_id,
+}: {
+  collections: ProductCollectionDTO[];
+  tags: ProductTagDTO[];
+  categories: { id: string; name: string }[];
+  sales_channels: { id: string }[];
+  shipping_profile_id: string;
+}): CreateProductWorkflowInputDTO[] => {
+  const coffeeProducts = buildCoffeeProducts({
+    collections,
+    tags,
+    sales_channels,
+    categories,
+    shipping_profile_id,
+  });
+
+  const drinkwareProducts = buildDrinkwareProducts({
+    collections,
+    tags,
+    sales_channels,
+    categories,
+    shipping_profile_id,
+  });
+
+  return [...coffeeProducts, ...drinkwareProducts];
+};
+
+const buildCoffeeProducts = ({
   collections,
   tags,
   sales_channels,
@@ -97,7 +180,7 @@ export const seedProducts = ({
         url: 'https://lambdacurrysites.s3.us-east-1.amazonaws.com/barrio/Barrio-Blend.jpg',
       },
     ],
-    ...buildBaseProductData({
+    ...buildBaseProductDataCoffee({
       sales_channels,
       sku: 'BARRIO-BLEND',
       prices: {
@@ -122,7 +205,7 @@ export const seedProducts = ({
         url: 'https://lambdacurrysites.s3.us-east-1.amazonaws.com/barrio/Midnight-Dark-Roast.jpg',
       },
     ],
-    ...buildBaseProductData({
+    ...buildBaseProductDataCoffee({
       sales_channels,
       sku: 'MIDNIGHT-DARK',
       prices: {
@@ -147,7 +230,7 @@ export const seedProducts = ({
         url: 'https://lambdacurrysites.s3.us-east-1.amazonaws.com/barrio/Sunrise-Single.jpg',
       },
     ],
-    ...buildBaseProductData({
+    ...buildBaseProductDataCoffee({
       sales_channels,
       sku: 'SUNRISE-SINGLE',
       prices: {
@@ -172,7 +255,7 @@ export const seedProducts = ({
         url: 'https://lambdacurrysites.s3.us-east-1.amazonaws.com/barrio/Barrio-Decaf.jpg',
       },
     ],
-    ...buildBaseProductData({
+    ...buildBaseProductDataCoffee({
       sales_channels,
       sku: 'BARRIO-DECAF',
       prices: {
@@ -197,7 +280,7 @@ export const seedProducts = ({
         url: 'https://lambdacurrysites.s3.us-east-1.amazonaws.com/barrio/Coconut-Mocha.jpg',
       },
     ],
-    ...buildBaseProductData({
+    ...buildBaseProductDataCoffee({
       sales_channels,
       sku: 'COCONUT-MOCHA',
       prices: {
@@ -223,7 +306,7 @@ export const seedProducts = ({
         url: 'https://lambdacurrysites.s3.us-east-1.amazonaws.com/barrio/Chili-Choco.jpg',
       },
     ],
-    ...buildBaseProductData({
+    ...buildBaseProductDataCoffee({
       sales_channels,
       sku: 'CHILI-CHOCO',
       prices: {
@@ -249,7 +332,7 @@ export const seedProducts = ({
         url: 'https://lambdacurrysites.s3.us-east-1.amazonaws.com/barrio/Cardamom-Spice.jpg',
       },
     ],
-    ...buildBaseProductData({
+    ...buildBaseProductDataCoffee({
       sales_channels,
       sku: 'CARDAMOM-SPICE',
       prices: {
@@ -275,12 +358,52 @@ export const seedProducts = ({
         url: 'https://lambdacurrysites.s3.us-east-1.amazonaws.com/barrio/Twilight-Peak.jpg',
       },
     ],
-    ...buildBaseProductData({
+    ...buildBaseProductDataCoffee({
       sales_channels,
       sku: 'TWILIGHT-PEAK',
       prices: {
         usd: 26.0,
         cad: 33.0,
+      },
+    }),
+  },
+];
+
+const buildDrinkwareProducts = ({
+  collections,
+  tags,
+  sales_channels,
+  categories,
+  shipping_profile_id,
+}: {
+  collections: ProductCollectionDTO[];
+  tags: ProductTagDTO[];
+  categories: { id: string; name: string }[];
+  sales_channels: { id: string }[];
+  shipping_profile_id: string;
+}): CreateProductWorkflowInputDTO[] => [
+  {
+    title: 'Custom Mug',
+    description:
+      "There's no better way to enjoy your Barrio Coffee than with your own unique mug. Start your day with an inspirational message or gift your loved ones something unique they'll cherish forever.",
+    handle: 'custom-mug',
+    collection_id: collections.find(({ title }) => title === 'Mugs')?.id,
+    category_ids: categories.filter(({ name }) => name === 'Drinkware').map(({ id }) => id),
+    status: ProductStatus.PUBLISHED,
+    tag_ids: tags.filter((t) => ['Customizable'].includes(t.value)).map((t) => t.id),
+    thumbnail: 'https://pub-91a6020f9c3e48088021cf5fda2b5225.r2.dev/mug_white.png',
+    shipping_profile_id,
+    images: [
+      {
+        url: 'https://pub-91a6020f9c3e48088021cf5fda2b5225.r2.dev/mug_white.png',
+      },
+    ],
+    ...buildBaseProductDataDrinkware({
+      sales_channels,
+      sku: 'CUSTOM-MUG',
+      prices: {
+        usd: 23.0,
+        cad: 30.0,
       },
     }),
   },
