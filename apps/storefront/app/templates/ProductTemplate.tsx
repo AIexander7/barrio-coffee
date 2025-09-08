@@ -88,7 +88,6 @@ export const ProductTemplate = ({ product, reviewsCount, reviewStats }: ProductT
   const { toggleCartDrawer } = useCart();
   const { region } = useRegion();
   const hasErrors = Object.keys(addToCartFetcher.data?.errors || {}).length > 0;
-  const [customTextLength, setCustomTextLength] = useState(0);
 
   // Combine both states to detect adding items as early as possible
   const isAddingToCart = ['submitting', 'loading'].includes(addToCartFetcher.state);
@@ -272,7 +271,6 @@ export const ProductTemplate = ({ product, reviewsCount, reviewStats }: ProductT
         const customText = formRef.current.querySelector('textarea[name="customText"]') as HTMLTextAreaElement;
         if (customText) {
           customText.value = '';
-          setCustomTextLength(0);
         }
 
         // Re-set the quantity field to 1
